@@ -9,6 +9,8 @@ import (
 	"strings"
 )
 
+// Ripped off the boilerplate from ../day1 and made some tweaks.
+
 type dialDirection int
 
 const (
@@ -63,8 +65,10 @@ func mainE(fileName string, dialDefault int, dialMax int, debug bool) error {
 			return fmt.Errorf("decoding line %q", err)
 		}
 
-		// Simplify by getting rid of any full rotations, as rotating by
-		// n results in the same ending number as rotating by n % dialMax in either direction.
+		// Rotating by n results in
+		// 1. crossing zero n times
+		// 2. the same ending number as rotating by n % dialMax in either direction.
+		numZeros += number / dialMax
 		number %= dialMax
 		oldDial := dial
 
@@ -75,7 +79,11 @@ func mainE(fileName string, dialDefault int, dialMax int, debug bool) error {
 			// Can still cross the threshold at most once
 			// (e.g. for dialmax 100 and dialStart 50, 50 + 60 = 110 =~= 10),
 			// Therefore, modulo by dialMax once more.
-			dial %= dialMax
+			if dial > dialMax {
+				dial %= dialMax
+				numZeros += 1
+			}
+
 		case dialDirectionLeft:
 			dial -= number
 
@@ -84,21 +92,18 @@ func mainE(fileName string, dialDefault int, dialMax int, debug bool) error {
 			// e.g. dialMax=100 dialStart=50: 50 -> L160 -> L60 -> -10, -10 + 100 = 90
 			if dial < 0 {
 				dial += dialMax
+				numZeros += 1
 			}
 		default:
 			return fmt.Errorf("unexpected direction %s", dialDirection)
 		}
 
-		if dial == 0 {
-			numZeros += 1
-		}
-
 		if debug {
-			fmt.Printf("line %s direction %s number %d, went from %d to %d\n", line, dialDirection, number, oldDial, dial)
+			fmt.Printf("direction=%s,number=%d,oldDial=%d,dial=%d,numZeros=%d\n", dialDirection, number, oldDial, dial, numZeros)
 		}
 	}
 
-	fmt.Printf("The dial landed on 0 %d times\n", numZeros)
+	fmt.Printf("The dial passed 0 %d times\n", numZeros)
 	return nil
 }
 
